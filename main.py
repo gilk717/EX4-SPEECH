@@ -6,25 +6,26 @@ def print_p(p: float):
     print("%.3f" % p)
 
 
-def get_prob(alpha, y, blank_token):
-    T, _ = y.shape
-    return alpha[-1, T - 1] + alpha[-2, T - 1]
+def get_prob(alpha):
+    return alpha[-1, -1] + alpha[-2, -1]
 
 
-def compute_ctc_alpha(y, z, tokens):
-    blank_token = len(tokens)
-    tokens = tokens + 'ϵ'
-    z = [blank_token] + [tokens.index(token) for token in z] + [blank_token]
+def compute_ctc_alpha(y, target_sequence, tokens):
+    blank_token = len(y[0]) - 1
+    z = [blank_token for _ in range(len(target_sequence) * 2 + 1)]
+    for i in range(len(z)):
+        if i % 2 == 1:
+            z[i] = tokens.index(target_sequence[int(i / 2)])
     S, T = len(z), y.shape[0]
     alpha = np.zeros((S, T))
 
     # Initialize first column
-    alpha[0, 0], alpha[1, 0] = y[0, z[0]], y[0, z[1]]
-    for s in range(2, S):
-        alpha[s, 0] = 0
+    alpha[0, 0], alpha[1, 0] = y[0, blank_token], y[0, z[1]]
 
     for t in range(1, T):
-        for s in range(1, S):  # Start from s=1
+        for s in range(0, S):  # Start from s=1
+            if s == 0:
+                alpha[s, t] = (alpha[s, t - 1]) * y[t, blank_token]
             if s == 1:
                 alpha[s, t] = (alpha[s, t - 1] + alpha[s - 1, t - 1]) * y[t, z[s]]
             else:
@@ -52,7 +53,7 @@ def main():
     alpha = compute_ctc_alpha(y, target_sequence, tokens)
 
     # Calculate probability
-    prob = get_prob(alpha, y, len(tokens))
+    prob = get_prob(alpha)
 
     # Print probability with the specified format
     print_p(prob)
