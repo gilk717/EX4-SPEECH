@@ -11,11 +11,11 @@ def get_prob(alpha):
 
 
 def compute_ctc_alpha(y, target_sequence, tokens):
-    blank_token = len(y[0]) - 1
+    blank_token = 0
     z = [blank_token for _ in range(len(target_sequence) * 2 + 1)]
     for i in range(len(z)):
         if i % 2 == 1:
-            z[i] = tokens.index(target_sequence[int(i / 2)])
+            z[i] = tokens.index(target_sequence[int(i / 2)]) + 1
     S, T = len(z), y.shape[0]
     alpha = np.zeros((S, T))
 
